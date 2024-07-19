@@ -165,7 +165,7 @@ def main(
             query = q["question"]
             question_ids.append(q["question_id"])
 
-            # NOTE: If you just want to retrieve the top 5 relevant documents
+            # NOTE: If you just want to retrieve the top_k relevant documents
             # set retrieval_only=True
             # Otherwise, it will answer the question
             if retrieval_only:
