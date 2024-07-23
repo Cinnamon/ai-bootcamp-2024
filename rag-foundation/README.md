@@ -96,11 +96,12 @@ If you don't have access to OpenAI API, use Groq free-tier instead:
 - Run the main script without `--retrieval_only` to use LLM
 
 ### 3. **Run Evaluation:**
+```sh
+python evaluate.py --predictions predictions.jsonl --gold data/qasper-test-v0.3.json --retrieval_only
+```
+$\rightarrow$ just evaluate the retrieval contexts.
 
 ```sh
-python evaluate.py --predictions predictions.jsonl --gold data/qasper-test-v0.3.json --retrieval_only True
+python evaluate.py --predictions predictions.jsonl --gold data/qasper-test-v0.3.json
 ```
-
-where some arguments can be:
-
-- `retrieval_only`: `True` or `False` (True: just evaluate the retrieval contexts)
+$\rightarrow$ evaluate both the retrieval contexts and answers.

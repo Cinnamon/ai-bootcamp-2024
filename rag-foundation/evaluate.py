@@ -176,8 +176,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--retrieval_only",
-        required=True,
         help="If set, the evaluator will just evaluate the retrieval scores",
+        action="store_true",
     )
     parser.add_argument(
         "--text_evidence_only",
