@@ -10,6 +10,8 @@ from sentence_transformers import SentenceTransformer
 from .base import BaseVectorStore
 from .node import TextNode, VectorStoreQueryResult
 
+import pandas as pd
+
 logger.add(
     sink=sys.stdout,
     colorize=True,
@@ -82,12 +84,18 @@ class SemanticVectorStore(BaseVectorStore):
         # HINT: np.linalg.norm
         "Your code here"
         norm_q = np.linalg.norm(qembed_np)
-        norm_d = np.linalg.norm(dembed_np)
-        cos_sim_arr = dproduct_arr / (norm_q * norm_d)
+        norm_d = np.linalg.norm(dembed_np, axis=1)
+        cos_sim_arr = dproduct_arr / (norm_d * norm_q)
+
+        # save sim_table
+        # sim_table = pd.DataFrame.from_dict(self.node_dict, orient='index').drop([1, 2], axis=1).reset_index()
+        # sim_table["sim score"] = cos_sim_arr
+        # sim_table.to_csv("test.csv")
 
         # get the indices of the top k similarities
         "Your code here"
-        k_indexes = np.argsort(cos_sim_arr)[-similarity_top_k:][::-1]
+        k_indexes = np.argsort(cos_sim_arr)[::-1][:similarity_top_k]
+        
         similarities = cos_sim_arr[k_indexes]
         node_ids = np.array(doc_ids)[k_indexes].tolist()
 
@@ -98,6 +106,7 @@ class SemanticVectorStore(BaseVectorStore):
         query_embedding = cast(List[float], self._get_text_embedding(query))
         doc_embeddings = [node.embedding for node in self.node_dict.values()]
         doc_ids = list(self.node_dict.keys())
+
         if len(doc_embeddings) == 0:
             logger.error("No documents found in the index.")
             result_nodes, similarities, node_ids = [], [], []
@@ -106,6 +115,7 @@ class SemanticVectorStore(BaseVectorStore):
                 query_embedding, doc_embeddings, doc_ids, top_k
             )
             result_nodes = [self.node_dict[node_id] for node_id in node_ids]
+
         return VectorStoreQueryResult(
             nodes=result_nodes, similarities=similarities, ids=node_ids
         )

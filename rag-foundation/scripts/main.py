@@ -78,8 +78,8 @@ class RAGPipeline:
         self.model = None
 
         # GROQ
-        # from langchain_groq import ChatGroq
-        # self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
+        from langchain_groq import ChatGroq
+        self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
 
         # OpenAI
         # from langchain_openai import ChatOpenAI
@@ -141,13 +141,14 @@ def main(
     # we will loop through each paper, gather the full text of each section
     # and prepare the documents for the vector store
     # and answer the query
-    for _, values in tqdm(raw_data.items()):
+    for _, values in tqdm(raw_data.items(), "papers"):
         # for each paper in qasper
         documents = []
 
         for section in values["full_text"]:
             # for each section in the paper
             documents += section["paragraphs"]
+            # print("\t",section["paragraphs"])
 
         # initialize the vector store
         # and rag pipeline
