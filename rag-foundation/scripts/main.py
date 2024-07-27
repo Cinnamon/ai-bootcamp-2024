@@ -64,6 +64,8 @@ def prepare_vector_store(documents: list, mode: str, force_index=False, chunk_si
     if force_index:
         nodes = prepare_data_nodes(documents=documents, chunk_size=chunk_size)
         vector_store.add(nodes)
+        # if mode=="sparse":
+        #     vector_store._initialize_bm25_assets()
 
     return vector_store
 
@@ -77,8 +79,8 @@ class RAGPipeline:
         self.model = None
 
         # GROQ
-        # from langchain_groq import ChatGroq
-        # self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
+        from langchain_groq import ChatGroq
+        self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
 
         # OpenAI
         # from langchain_openai import ChatOpenAI
@@ -108,7 +110,7 @@ class RAGPipeline:
 
 
 def main(
-    data_path: Path = Path("data/qasper-test-v0.3.json"),
+    data_path: Path = Path("qasper-test-v0.3.json"),
     output_path: Path = Path("predictions.jsonl"),
     mode: str = "sparse",
     force_index: bool = False,
@@ -215,3 +217,8 @@ def main(
 
 if __name__ == "__main__":
     fire.Fire(main)
+
+"""
+
+python -m scripts.main --output_path predictions.jsonl --mode semantic --force_index False --retrieval_only True --top_k 5
+"""
