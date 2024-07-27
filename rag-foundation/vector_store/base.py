@@ -4,8 +4,12 @@ from pathlib import Path
 import pandas as pd
 from loguru import logger
 from pydantic import BaseModel, Field
+from tqdm import tqdm
 
 from .node import BaseNode, TextNode
+
+logger.remove()
+logger.add(lambda msg: tqdm.write(msg, end=""))
 
 
 class BaseVectorStore(BaseModel):

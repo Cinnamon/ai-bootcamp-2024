@@ -4,10 +4,11 @@ from pathlib import Path
 import fire
 from llama_index.core import Document
 from llama_index.core.node_parser import SentenceSplitter
+from tqdm import tqdm
+from vector_store.hybrid_vector_store import HybridVectorStore
 from vector_store.node import TextNode, VectorStoreQueryResult
 from vector_store.semantic_vector_store import SemanticVectorStore
 from vector_store.sparse_vector_store import SparseVectorStore
-from tqdm import tqdm
 
 
 def prepare_data_nodes(documents: list, chunk_size: int = 200) -> list[TextNode]:
@@ -59,8 +60,12 @@ def prepare_vector_store(documents: list, mode: str, force_index=False, chunk_si
             saved_file="data/dense.csv",
             force_index=force_index,
         )
+    elif mode == "hybrid":
+        vector_store = HybridVectorStore(persist=True, force_index=force_index)
     else:
-        raise ValueError("Invalid mode. Choose either `sparse` or `semantic`.")
+        raise ValueError(
+            "Invalid mode. Choose either `sparse`, `hybrid`, or `semantic`."
+        )
 
     if force_index:
         nodes = prepare_data_nodes(documents=documents, chunk_size=chunk_size)
@@ -78,8 +83,8 @@ class RAGPipeline:
         self.model = None
 
         # GROQ
-        from langchain_groq import ChatGroq
-        self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
+        # from langchain_groq import ChatGroq
+        # self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
 
         # OpenAI
         # from langchain_openai import ChatOpenAI
@@ -141,7 +146,7 @@ def main(
     # we will loop through each paper, gather the full text of each section
     # and prepare the documents for the vector store
     # and answer the query
-    for _, values in tqdm(raw_data.items(), "papers"):
+    for _, values in tqdm(raw_data.items(), "documents", position=0, leave=True):
         # for each paper in qasper
         documents = []
 

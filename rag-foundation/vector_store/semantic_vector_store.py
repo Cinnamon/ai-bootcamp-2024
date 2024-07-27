@@ -1,22 +1,23 @@
 # autoflake: off
 # flake8: noqa: F841
-import sys
-from typing import Dict, List, cast
+from typing import Dict, List, Union, cast
 
 import numpy as np
 from loguru import logger
 from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
 
 from .base import BaseVectorStore
 from .node import TextNode, VectorStoreQueryResult
 
-import pandas as pd
+# logger.add(
+#     sink=sys.stdout,
+#     colorize=True,
+#     format="<green>{time}</green> <level>{message}</level>"
+# )
 
-logger.add(
-    sink=sys.stdout,
-    colorize=True,
-    format="<green>{time}</green> <level>{message}</level>",
-)
+logger.remove()
+logger.add(lambda msg: tqdm.write(msg, end=""))
 
 
 class SemanticVectorStore(BaseVectorStore):
@@ -69,7 +70,8 @@ class SemanticVectorStore(BaseVectorStore):
         doc_embeddings: List[List[float]],
         doc_ids: List[str],
         similarity_top_k: int = 3,
-    ) -> tuple[List[float], List[str]]:
+        return_rank: bool = False,
+    ) -> Union[tuple[List[float], List[str]], np.ndarray]:
         """Get top nodes by similarity to the query."""
         qembed_np = np.array(query_embedding)
         dembed_np = np.array(doc_embeddings)
@@ -87,19 +89,33 @@ class SemanticVectorStore(BaseVectorStore):
         norm_d = np.linalg.norm(dembed_np, axis=1)
         cos_sim_arr = dproduct_arr / (norm_d * norm_q)
 
-        # save sim_table
-        # sim_table = pd.DataFrame.from_dict(self.node_dict, orient='index').drop([1, 2], axis=1).reset_index()
-        # sim_table["sim score"] = cos_sim_arr
-        # sim_table.to_csv("test.csv")
+        if return_rank:
+            return np.argsort(cos_sim_arr)
 
         # get the indices of the top k similarities
         "Your code here"
         k_indexes = np.argsort(cos_sim_arr)[::-1][:similarity_top_k]
-        
+
         similarities = cos_sim_arr[k_indexes]
         node_ids = np.array(doc_ids)[k_indexes].tolist()
 
-        return similarities, node_ids
+        return (
+            similarities,
+            node_ids,
+        )
+
+    def get_ranks(self, query: str) -> np.ndarray:
+        """Get rank of documents base on query"""
+        query_embedding = cast(List[float], self._get_text_embedding(query))
+        doc_embeddings = [node.embedding for node in self.node_dict.values()]
+        doc_ids = list(self.node_dict.keys())
+
+        ranks = self._calculate_similarity(
+            query_embedding, doc_embeddings, doc_ids, return_rank=True
+        )
+
+        # add 1 because rank start at 1
+        return ranks + 1
 
     def query(self, query: str, top_k: int = 3) -> VectorStoreQueryResult:
         """Query similar nodes."""

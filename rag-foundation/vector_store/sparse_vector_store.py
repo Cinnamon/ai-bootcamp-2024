@@ -1,6 +1,5 @@
 # flake8: noqa: F841
 import json
-import sys
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import ClassVar, Dict, List
@@ -8,16 +7,20 @@ from typing import ClassVar, Dict, List
 import numpy as np
 from loguru import logger
 from pydantic import Field
+from tqdm import tqdm
 from transformers import AutoTokenizer
 
 from .base import BaseVectorStore
 from .node import TextNode, VectorStoreQueryResult
 
-logger.add(
-    sink=sys.stdout,
-    colorize=True,
-    format="<green>{time}</green> <level>{message}</level>",
-)
+# logger.add(
+#     sink=sys.stdout,
+#     colorize=True,
+#     format="<green>{time}</green> <level>{message}</level>",
+# )
+
+logger.remove()
+logger.add(lambda msg: tqdm.write(msg, end=""))
 
 TOKENIZER = AutoTokenizer.from_pretrained(
     "google-bert/bert-base-uncased", max_length=200, truncation=True
@@ -134,7 +137,7 @@ class SparseVectorStore(BaseVectorStore):
 
         for node in nodes:
             self.node_dict[node.id_] = node
-        
+
         self.node_list = list(self.node_dict.values())
 
         self._update_csv()  # Update CSV after adding nodes
@@ -159,21 +162,40 @@ class SparseVectorStore(BaseVectorStore):
             # calulate the score for each token in the query
             # HINT: use self.doc_freqs, self.idf, self.corpus_size, self.avgdl
             "Your code here"
-            term_frequency = np.array([
-                self.doc_freqs[doc][q] if q in self.doc_freqs[doc].keys() else 0 
-                for doc in range(self.corpus_size)]) 
-            
-            doc_lens = np.array([self.doc_len[doc] for doc in range(self.corpus_size)]) 
+            term_frequency = np.array(
+                [
+                    self.doc_freqs[doc][q] if q in self.doc_freqs[doc].keys() else 0
+                    for doc in range(self.corpus_size)
+                ]
+            )
+
+            doc_lens = np.array([self.doc_len[doc] for doc in range(self.corpus_size)])
             numerator = term_frequency * (self.k1 + 1)
-            denominator = term_frequency + self.k1 * (1 - self.b + self.b * (doc_lens / self.avgdl))
+            denominator = term_frequency + self.k1 * (
+                1 - self.b + self.b * (doc_lens / self.avgdl)
+            )
 
             if q in self.idf.keys():
                 cur_score = self.idf[q] * (numerator / denominator)
             else:
                 cur_score = np.zeros(self.corpus_size)
-                
+
             score += cur_score
         return score
+
+    def get_ranks(self, query: str) -> np.array:
+        """Get ranks of documents base on query
+
+        Args:
+            query (str): query
+
+        Return:
+            np.array: (copus_size) ranks of documents
+        """
+        scores = self.get_scores(query)
+
+        # add 1 because rank start at 1
+        return np.argsort(scores) + 1
 
     def query(self, query: str, top_k: int = 3) -> VectorStoreQueryResult:
         """Query similar nodes.
