@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from .base import BaseVectorStore
 from .node import TextNode, VectorStoreQueryResult
+from .utils import get_rank
 
 # logger.add(
 #     sink=sys.stdout,
@@ -90,7 +91,7 @@ class SemanticVectorStore(BaseVectorStore):
         cos_sim_arr = dproduct_arr / (norm_d * norm_q)
 
         if return_rank:
-            return np.argsort(cos_sim_arr)
+            return get_rank(cos_sim_arr)
 
         # get the indices of the top k similarities
         "Your code here"
@@ -115,7 +116,7 @@ class SemanticVectorStore(BaseVectorStore):
         )
 
         # add 1 because rank start at 1
-        return ranks + 1
+        return ranks
 
     def query(self, query: str, top_k: int = 3) -> VectorStoreQueryResult:
         """Query similar nodes."""

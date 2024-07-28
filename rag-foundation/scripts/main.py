@@ -7,6 +7,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from tqdm import tqdm
 from vector_store.hybrid_vector_store import HybridVectorStore
 from vector_store.node import TextNode, VectorStoreQueryResult
+from vector_store.re_ranking import ReRanking
 from vector_store.semantic_vector_store import SemanticVectorStore
 from vector_store.sparse_vector_store import SparseVectorStore
 
@@ -75,12 +76,21 @@ def prepare_vector_store(documents: list, mode: str, force_index=False, chunk_si
 
 
 class RAGPipeline:
-    def __init__(self, vector_store: SemanticVectorStore, prompt_template: str):
+    def __init__(
+        self,
+        vector_store: SemanticVectorStore,
+        prompt_template: str,
+        re_rank: bool = False,
+    ):
         self.vector_store = vector_store
         self.prompt_template = prompt_template
 
         # choose your model from groq or openai/azure
         self.model = None
+
+        self.re_ranker = None
+        if re_rank:
+            self.re_ranker = ReRanking()
 
         # GROQ
         # from langchain_groq import ChatGroq
@@ -92,6 +102,10 @@ class RAGPipeline:
 
     def retrieve(self, query: str, top_k: int = 5) -> VectorStoreQueryResult:
         query_result = self.vector_store.query(query, top_k=top_k)
+
+        if self.re_ranker:
+            query_result = self.re_ranker(query, query_result)
+
         return query_result
 
     def answer(self, query: str, top_k: int = 5) -> tuple[str, list[str]]:
@@ -122,6 +136,7 @@ def main(
     chunk_size: int = 200,
     top_k: int = 5,
     retrieval_only: bool = False,
+    re_rank: bool = False,
 ):
     # Generate doc string
     """
@@ -165,7 +180,9 @@ def main(
         # NOTE: Should design your own template
         prompt_template = """Question: {}\n\nGiven context: {}\n\nAnswer:"""
 
-        rag_pipeline = RAGPipeline(vector_store, prompt_template=prompt_template)
+        rag_pipeline = RAGPipeline(
+            vector_store, prompt_template=prompt_template, re_rank=re_rank
+        )
 
         for q in values["qas"]:
             # for each question in the paper
@@ -202,6 +219,8 @@ def main(
 
                 predicted_evidences.append(context_list)
                 predicted_answers.append(predicted_answer)
+            # break
+        # break
 
     # save the results
     with open(output_path, "w") as f:

@@ -12,6 +12,7 @@ from transformers import AutoTokenizer
 
 from .base import BaseVectorStore
 from .node import TextNode, VectorStoreQueryResult
+from .utils import get_rank
 
 # logger.add(
 #     sink=sys.stdout,
@@ -193,9 +194,7 @@ class SparseVectorStore(BaseVectorStore):
             np.array: (copus_size) ranks of documents
         """
         scores = self.get_scores(query)
-
-        # add 1 because rank start at 1
-        return np.argsort(scores) + 1
+        return get_rank(scores)
 
     def query(self, query: str, top_k: int = 3) -> VectorStoreQueryResult:
         """Query similar nodes.

@@ -28,7 +28,7 @@ class HybridVectorStore(BaseVectorStore):
     dense_vector_store: SemanticVectorStore = Field(SemanticVectorStore, init=False)
     sparse_vector_store: SparseVectorStore = Field(SparseVectorStore, init=False)
 
-    def __init__(self, **data):
+    def __init__(self, re_rank=False, **data):
         super().__init__(**data)
         self.dense_vector_store = SemanticVectorStore(
             saved_file="data/dense.csv", **data
@@ -36,7 +36,6 @@ class HybridVectorStore(BaseVectorStore):
         self.sparse_vector_store = SparseVectorStore(
             saved_file="data/sparse.csv", **data
         )
-        # super().__init__(**data)
 
     def add(self, nodes: List[TextNode]) -> List[str]:
         """Add nodes to index."""
@@ -50,13 +49,9 @@ class HybridVectorStore(BaseVectorStore):
         # the delete function in SparseVectorStore is note implemented
         # self.sparse_vector_store.delete(node_id)
 
-    def worker(query, vector_store):
-        ranks = vector_store.get_ranks(query)
-        return ranks
-
     def query(self, query: str, top_k: int = 3, k: int = 60) -> VectorStoreQueryResult:
         """Query similar nodes."""
-        ranks = {
+        results = {
             "dense_ranks": self.dense_vector_store.get_ranks(query),
             "sparse_ranks": self.sparse_vector_store.get_ranks(query),
         }
@@ -68,16 +63,18 @@ class HybridVectorStore(BaseVectorStore):
         corpus_size = self.sparse_vector_store.corpus_size
         node_list = self.sparse_vector_store.node_list
 
-        scores = np.zeros(corpus_size)
+        rrf_scores = np.zeros(corpus_size)
 
-        for _, rank in ranks.items():
-            scores += 1 / (k + rank)
+        for _, rank in results.items():
+            rrf_scores += 1 / (k + rank)
 
-        best_ids = np.argsort(scores)[::-1][:top_k]
+        best_ids = np.argsort(rrf_scores)[::-1]
+        best_ids = best_ids[:top_k]
         nodes = [node_list[node_id] for node_id in best_ids]
+
         return VectorStoreQueryResult(
             nodes=nodes,
-            similarities=[scores[doc_id] for doc_id in best_ids],
+            similarities=[rrf_scores[doc_id] for doc_id in best_ids],
             ids=[node.id_ for node in nodes],
         )
 
