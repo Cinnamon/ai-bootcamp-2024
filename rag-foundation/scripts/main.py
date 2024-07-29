@@ -79,12 +79,18 @@ class RAGPipeline:
         self.model = None
 
         # GROQ
-        from langchain_groq import ChatGroq
-        self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
+        # from langchain_groq import ChatGroq
+        # self.model = ChatGroq(model="llama3-70b-8192", temperature=0)
 
         # OpenAI
         # from langchain_openai import ChatOpenAI
         # self.model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+
+        #ollama
+        from langchain_ollama.llms import OllamaLLM
+        self.model = OllamaLLM(model="qwen2:0.5b")
+
+
 
     def retrieve(self, query: str, top_k: int = 5) -> VectorStoreQueryResult:
         query_result = self.vector_store.query(query, top_k=top_k)
@@ -106,7 +112,7 @@ class RAGPipeline:
             response = self.model.invoke(self.prompt_template)
         except Exception as e:
             raise Exception(f"Error in calling the model: {e}")
-        return response.content, context_list
+        return response, context_list
 
 
 def main(
@@ -220,5 +226,11 @@ if __name__ == "__main__":
 
 """
 
-python -m scripts.main --output_path predictions.jsonl --mode semantic --force_index False --retrieval_only True --top_k 5
+python -m scripts.main --output_path predictions-ollama-llama.jsonl --mode sparse --force_index False --retrieval_only False --top_k 5
+python -m scripts.main --output_path predictions-ollama-phi3.jsonl --mode sparse --force_index False --retrieval_only False --top_k 5
+
+python -m scripts.main --output_path predictions-ollama-qwen2.jsonl --mode sparse --force_index False --retrieval_only False --top_k 5
+
+python -m scripts.main --output_path predictions-none.jsonl --mode sparse --force_index False --retrieval_only True --top_k 5
+
 """

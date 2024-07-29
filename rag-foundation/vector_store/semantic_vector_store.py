@@ -76,7 +76,7 @@ class SemanticVectorStore(BaseVectorStore):
         # the query embedding with the document embeddings
         # HINT: np.dot
         "Your code here"
-        dproduct_arr = np.dot(dembed_np, qembed_np.T)
+        dproduct_arr = np.dot(qembed_np,dembed_np.T)
         # calculate the cosine similarity
         # by dividing the dot product by the norm
         # HINT: np.linalg.norm

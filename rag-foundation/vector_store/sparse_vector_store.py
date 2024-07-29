@@ -4,6 +4,7 @@ import sys
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import ClassVar, Dict, List
+from time import perf_counter
 
 import numpy as np
 from loguru import logger
@@ -22,8 +23,9 @@ logger.add(
 TOKENIZER = AutoTokenizer.from_pretrained(
     "google-bert/bert-base-uncased", max_length=200, truncation=True
 )
-
-
+BBB=0
+t0=perf_counter()
+t=perf_counter()
 class SparseVectorStore(BaseVectorStore):
     """VectorStore2 (add/get/delete implemented)."""
 
@@ -118,7 +120,7 @@ class SparseVectorStore(BaseVectorStore):
         # Calculate the inverse document frequency for a word
         # HINT: Use the formula provided in the BM25 algorithm and np.log()
         "Your code here"
-        idf_score = np.log((corpus_size-doc_count+0.5)/(doc_count+0.5)+1)
+        idf_score = np.log(1+(corpus_size-doc_count+0.5)/(doc_count+0.5))
         return idf_score
 
     def _tokenize_text(self, corpus: List[str] | str):
@@ -188,7 +190,14 @@ class SparseVectorStore(BaseVectorStore):
         """
         scores = self.get_scores(query)
         best_ids = np.argsort(scores)[::-1][:top_k]
-        print(best_ids)
+        global BBB
+        global t
+        BBB+=1
+        t=perf_counter()
+        print(best_ids,f"{BBB}/1451",f"avg{(t-t0)/BBB}s")
+        
+        
+        
         nodes = [self.node_list[node_id] for node_id in best_ids]
         return VectorStoreQueryResult(
             nodes=nodes,
