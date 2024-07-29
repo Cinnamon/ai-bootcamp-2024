@@ -25,8 +25,10 @@ class SemanticVectorStore(BaseVectorStore):
     """Semantic Vector Store using SentenceTransformer embeddings."""
 
     saved_file: str = "rag-foundation/data/test_db_00.csv"
-    embed_model_name: str = "all-MiniLM-L6-v2"
-    embed_model: SentenceTransformer = SentenceTransformer(embed_model_name)
+    embed_model_name: str = "nomic-ai/nomic-embed-text-v1.5"
+    embed_model: SentenceTransformer = SentenceTransformer(
+        embed_model_name, trust_remote_code=True
+    )
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -48,14 +50,17 @@ class SemanticVectorStore(BaseVectorStore):
                     "Found node without embedding, calculating "
                     f"embedding with model {self.embed_model_name}"
                 )
-                node.embedding = self._get_text_embedding(node.text)
+                node.embedding = self._get_text_embedding(node.text, "doc")
             self.node_dict[node.id_] = node
         self._update_csv()  # Update CSV after adding nodes
         return [node.id_ for node in nodes]
 
-    def _get_text_embedding(self, text: str) -> List[float]:
+    def _get_text_embedding(self, text: str, embed_type: str) -> List[float]:
         """Calculate embedding."""
-        return self.embed_model.encode(text).tolist()
+        if embed_type == "doc":
+            return self.embed_model.encode("search_document: " + text).tolist()
+
+        return self.embed_model.encode("search_query: " + text).tolist()
 
     def delete(self, node_id: str, **delete_kwargs: Dict) -> None:
         """Delete nodes using node_id."""
@@ -107,7 +112,7 @@ class SemanticVectorStore(BaseVectorStore):
 
     def get_ranks(self, query: str) -> np.ndarray:
         """Get rank of documents base on query"""
-        query_embedding = cast(List[float], self._get_text_embedding(query))
+        query_embedding = cast(List[float], self._get_text_embedding(query, "query"))
         doc_embeddings = [node.embedding for node in self.node_dict.values()]
         doc_ids = list(self.node_dict.keys())
 
@@ -120,7 +125,7 @@ class SemanticVectorStore(BaseVectorStore):
 
     def query(self, query: str, top_k: int = 3) -> VectorStoreQueryResult:
         """Query similar nodes."""
-        query_embedding = cast(List[float], self._get_text_embedding(query))
+        query_embedding = cast(List[float], self._get_text_embedding(query, "query"))
         doc_embeddings = [node.embedding for node in self.node_dict.values()]
         doc_ids = list(self.node_dict.keys())
 
