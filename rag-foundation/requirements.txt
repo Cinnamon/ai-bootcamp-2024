@@ -92,3 +92,4 @@ yarl==1.9.4
 fire
 langchain-openai
 langchain-groq
+datasets==2.20.0
