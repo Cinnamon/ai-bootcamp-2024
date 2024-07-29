@@ -1,6 +1,9 @@
 """
 Official script for evaluating models built for the Qasper dataset. The script
 outputs Answer F1 and Evidence F1 reported in the paper.
+
+python evaluate.py --predictions predictions-llama-sparse.jsonl --gold qasper-test-v0.3.json 
+
 """
 
 import argparse
