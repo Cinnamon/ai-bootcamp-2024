@@ -156,7 +156,6 @@ class SparseVectorStore(BaseVectorStore):
     def get_scores(self, query: str):
         score = np.zeros(self.corpus_size)
         tokenized_query = self._tokenize_text(query)
-        print(f"len of query{len(tokenized_query)}")
         for q in tokenized_query:
             # calulate the score for each token in the query
             # HINT: use self.doc_freqs, self.idf, self.corpus_size, self.avgdl
@@ -176,7 +175,6 @@ class SparseVectorStore(BaseVectorStore):
             cur_score = idf * tf_fancy
 
             score += cur_score
-        # print()
         return score
 
     def query(self, query: str, top_k: int = 3) -> VectorStoreQueryResult:
