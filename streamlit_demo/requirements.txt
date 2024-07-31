@@ -1,0 +1,10 @@
+loguru==0.7.2
+numpy==2.0.1
+opencv_python==4.10.0.84
+pandas==2.2.2
+Pillow==10.4.0
+Requests==2.32.3
+SQLAlchemy==2.0.31
+streamlit==1.36.0
+torch==2.0.1
+ultralytics==8.2.64

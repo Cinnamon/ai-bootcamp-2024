@@ -1,0 +1,1 @@
+from .app.view import App
